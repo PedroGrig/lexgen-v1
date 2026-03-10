@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #0f0f13;
+    color: #e8e4dc;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #18181f;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2a2a35;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3a3a45;
+}
+
+/* Custom focus ring */
+*:focus-visible {
+    outline: 2px solid #c9a96e;
+    outline-offset: 2px;
+}
+
+/* Selection color */
+::selection {
+    background: rgba(201, 169, 110, 0.3);
+    color: #e8e4dc;
+}
+
+/* Animations */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.loading-shimmer {
+    background: linear-gradient(90deg,
+            #18181f 0%,
+            #2a2a35 50%,
+            #18181f 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* Glass morphism card */
+.glass-card {
+    background: rgba(24, 24, 31, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(201, 169, 110, 0.1);
+}
+
+/* Gold gradient text */
+.text-gold-gradient {
+    background: linear-gradient(135deg, #c9a96e, #e8d5a8, #c9a96e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Pulse dot */
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}

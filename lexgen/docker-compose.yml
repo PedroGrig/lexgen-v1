@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: lexgen-qdrant
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "6333:6333"
+    networks:
+      - lexgen-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: lexgen-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - lexgen-network
+    # Para usar GPU NVIDIA, descomente:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  backend:
+    build: ./backend
+    container_name: lexgen-backend
+    restart: unless-stopped
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+      - OLLAMA_MODEL=qwen2.5:3b
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_USER=${ADMIN_USER}
+      - ADMIN_PASS=${ADMIN_PASS}
+      - USER_PASS=${USER_PASS}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - qdrant
+      - ollama
+    networks:
+      - lexgen-network
+
+  frontend:
+    build: ./frontend
+    container_name: lexgen-frontend
+    restart: always
+    environment:
+      - API_URL=http://backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - lexgen-network
+
+volumes:
+  qdrant_data:
+  ollama_data:
+
+
+networks:
+  lexgen-network:
+    driver: bridge
