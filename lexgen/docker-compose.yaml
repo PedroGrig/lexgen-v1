@@ -7,8 +7,8 @@ services:
     restart: unless-stopped
     volumes:
       - qdrant_data:/qdrant/storage
-    ports:
-      - "6333:6333"
+    expose:
+      - "6333"
     networks:
       - lexgen-network
 
@@ -18,18 +18,29 @@ services:
     restart: unless-stopped
     volumes:
       - ollama_data:/root/.ollama
-    ports:
-      - "11434:11434"
+    expose:
+      - "11434"
     networks:
       - lexgen-network
-    # Para usar GPU NVIDIA, descomente:
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Puxa o modelo automaticamente após o Ollama subir
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: lexgen-ollama-init
+    restart: "no"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    networks:
+      - lexgen-network
+    entrypoint: >
+      sh -c "OLLAMA_HOST=http://ollama:11434 ollama pull qwen2.5:3b"
 
   backend:
     build: ./backend
@@ -45,13 +56,19 @@ services:
       - ADMIN_USER=${ADMIN_USER}
       - ADMIN_PASS=${ADMIN_PASS}
       - USER_PASS=${USER_PASS}
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     depends_on:
       - qdrant
       - ollama
     networks:
       - lexgen-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   frontend:
     build: ./frontend
@@ -59,18 +76,28 @@ services:
     restart: always
     environment:
       - API_URL=http://backend:8000
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - lexgen-network
+      - coolify  # necessário para o Traefik do Coolify enxergar o container
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lexgen.rule=Host(`lexgen.ggvadv.com`)"
+      - "traefik.http.routers.lexgen.entrypoints=https"
+      - "traefik.http.routers.lexgen.tls=true"
+      - "traefik.http.routers.lexgen.tls.certresolver=letsencrypt"
+      - "traefik.http.services.lexgen.loadbalancer.server.port=3000"
 
 volumes:
   qdrant_data:
   ollama_data:
 
-
 networks:
   lexgen-network:
     driver: bridge
+  coolify:
+    external: true  # rede gerenciada pelo Coolify/Traefik
